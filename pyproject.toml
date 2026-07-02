@@ -1,0 +1,13 @@
+[project]
+name = "wasteco-sys-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.3",
+    "fastapi-users[sqlalchemy]>=15.0.5",
+    "psycopg2-binary>=2.9.12",
+    "python-dotenv>=1.2.2",
+    "uvicorn>=0.48.0",
+]
