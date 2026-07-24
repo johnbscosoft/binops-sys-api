@@ -13,6 +13,7 @@ class RoleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    company_id: UUID
     name: str
     description: str | None
 
@@ -20,6 +21,7 @@ class RoleRead(BaseModel):
 # Request schema for creating a user. The password should be hashed before
 # saving it to User.hashed_password.
 class UserCreate(BaseModel):
+    company_code: str = Field(min_length=7, max_length=7)
     email: EmailStr
     password: str = Field(min_length=8)
     username: str | None = Field(default=None, max_length=80)
@@ -30,6 +32,7 @@ class UserCreate(BaseModel):
 
 
 class UserAdminCreate(UserCreate):
+    company_code: str | None = Field(default=None, min_length=7, max_length=7)
     is_active: bool = True
     is_verified: bool = False
     is_superuser: bool = False
@@ -55,6 +58,7 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    company_id: UUID
     email: EmailStr
     username: str | None
     first_name: str | None
@@ -74,6 +78,15 @@ class UserRead(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class TwoFactorVerifyRequest(BaseModel):
+    challenge_id: UUID
+    otp: str = Field(pattern=r"^\d{6}$")
+
+
+class TwoFactorResendRequest(BaseModel):
+    challenge_id: UUID
 
 
 class TokenPair(BaseModel):

@@ -1,7 +1,10 @@
+import base64
 import hashlib
 import hmac
+import json
 import secrets
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from app.core.config import get_settings
 
@@ -47,6 +50,30 @@ def create_plain_token() -> str:
     return secrets.token_urlsafe(48)
 
 
+def _base64url_encode(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("utf-8")
+
+
+def create_jwt_token(payload: dict[str, Any]) -> str:
+    if settings.jwt_algorithm != "HS256":
+        raise ValueError("Only HS256 JWT signing is supported")
+
+    header = {"alg": settings.jwt_algorithm, "typ": "JWT"}
+    encoded_header = _base64url_encode(
+        json.dumps(header, separators=(",", ":")).encode("utf-8")
+    )
+    encoded_payload = _base64url_encode(
+        json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
+    )
+    signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
+    signature = hmac.new(
+        settings.jwt_secret_key.encode("utf-8"),
+        signing_input,
+        hashlib.sha256,
+    ).digest()
+    return f"{encoded_header}.{encoded_payload}.{_base64url_encode(signature)}"
+
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
@@ -65,3 +92,7 @@ def verification_token_expires_at() -> datetime:
 
 def password_reset_token_expires_at() -> datetime:
     return now_utc() + timedelta(minutes=settings.password_reset_token_expire_minutes)
+
+
+def otp_expires_at() -> datetime:
+    return now_utc() + timedelta(minutes=settings.otp_expire_minutes)

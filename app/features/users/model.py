@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -22,6 +22,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
@@ -45,6 +46,7 @@ class User(Base):
     )
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
+    company = relationship("Company", back_populates="users")
     roles = relationship("Role", secondary=user_roles, back_populates="users")
     sessions = relationship(
         "UserSession",
@@ -61,16 +63,23 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    two_factor_challenges = relationship(
+        "TwoFactorChallenge",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class Role(Base):
     __tablename__ = "roles"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, unique=True, index=True, nullable=False)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), index=True, nullable=False)
+    name = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    company = relationship("Company", back_populates="roles")
     users = relationship("User", secondary=user_roles, back_populates="roles")
 
 
@@ -115,3 +124,20 @@ class PasswordResetToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user = relationship("User", back_populates="password_reset_tokens")
+
+
+class TwoFactorChallenge(Base):
+    __tablename__ = "two_factor_challenges"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True, nullable=False)
+    otp_hash = Column(String, nullable=False)
+    delivery_channels = Column(String, nullable=False)
+    attempt_count = Column(Integer, default=0, nullable=False)
+    max_attempts = Column(Integer, default=5, nullable=False)
+    expires_at = Column(DateTime(timezone=True), index=True, nullable=False)
+    last_sent_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="two_factor_challenges")

@@ -1,0 +1,8 @@
+-- Persist all fields used by the Add/Edit Client form.
+ALTER TABLE customer
+    ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION,
+    ADD COLUMN IF NOT EXISTS place_id VARCHAR,
+    ADD COLUMN IF NOT EXISTS flat_no VARCHAR,
+    ADD COLUMN IF NOT EXISTS house_no VARCHAR,
+    ADD COLUMN IF NOT EXISTS status VARCHAR NOT NULL DEFAULT 'Active';
