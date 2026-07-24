@@ -1,0 +1,12 @@
+services:
+  api:
+    image: jbscosoft/binops-sys-api:${API_IMAGE_TAG:-latest}
+    container_name: binops-sys-api
+    pull_policy: always
+    env_file:
+      - ${API_ENV_FILE:-./deploy/api.env}
+    ports:
+      - "${API_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8001}:8001"
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
