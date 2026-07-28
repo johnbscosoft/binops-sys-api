@@ -14,6 +14,11 @@ wheels/
 .env.*
 !.env.example
 deploy/api.env
+.deploy.env
+*.dump
+*.backup
+*.sql.gz
+backups/
 
 # Tooling, tests, and editor files
 .pytest_cache/

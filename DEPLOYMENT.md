@@ -1,97 +1,186 @@
-# API Docker Hub deployment
+# API Docker Hub build and manual production deployment
 
-The CI workflow tests the API, builds the production image, and publishes it to:
+GitHub Actions runs tests, builds the production API image, and publishes it to:
 
 ```text
-jbscosoft/binops-sys-api
+jbscosoft/binops-sys
 ```
 
-## Docker Hub and GitHub setup
+Production deployment is intentionally manual. GitHub Actions does not connect
+to the production server.
 
-1. Create `jbscosoft/binops-sys-api` in Docker Hub.
-2. Create a Docker Hub access token with read/write access to that repository.
-3. In the GitHub repository, open **Settings → Secrets and variables → Actions**.
-4. Create the repository secret `DOCKERHUB_TOKEN`.
+## GitHub Actions and Docker Hub
+
+Create the GitHub repository secret:
+
+```text
+DOCKERHUB_TOKEN
+```
+
+It must contain a Docker Hub access token with read/write permission for the
+shared `jbscosoft/binops-sys` repository.
 
 The workflow publishes:
 
-- `latest` for pushes to `main`.
-- `main` or `testenv` for pushes to those branches.
-- `sha-<commit>` for an immutable deployment and rollback reference.
-- semantic-version tags when a tag such as `v1.2.0` is pushed.
+- `api-latest` for pushes to `main`.
+- `api-main` and `api-testenv` for their respective branches.
+- `api-sha-<full-commit>` as an immutable deployment and rollback tag.
+- API-prefixed semantic-version tags such as `api-1.2.0`.
 
-Pull requests run tests and compile checks, but do not publish images.
+The shared repository can also contain tags such as `ui-latest`,
+`ui-sha-<commit>`, and `db-18.4` without requiring separate Docker Hub
+repositories.
 
-## Prepare the server
+Pull requests run tests without publishing an image. Pushes to `main` or
+`testenv` run tests and publish images, but never deploy to the server.
 
-Copy these files to a deployment directory on the server:
+## Files required on the production server
+
+Place these files in `/opt/binops-sys-api`:
 
 ```text
 compose.server.yaml
-deploy/api.env.example
+deploy/api.env
 ```
 
-Create the production environment file:
+Prepare the directory:
 
 ```bash
-cp deploy/api.env.example deploy/api.env
+sudo mkdir -p /opt/binops-sys-api/deploy
+sudo chown -R "$USER":"$USER" /opt/binops-sys-api
+cd /opt/binops-sys-api
 chmod 600 deploy/api.env
 ```
 
-Replace every placeholder in `deploy/api.env`. Do not commit `deploy/api.env`.
+The production environment should include:
 
-For a private Docker Hub repository, sign in with a read-only access token:
+```env
+ENVIRONMENT=production
+AUTO_CREATE_TABLES=false
+DATABASE_URL=postgresql://admin:YOUR_URL_ENCODED_PASSWORD@database:5432/wasteops_db
+CORS_ORIGINS=https://erisa.binopsug.com
+JWT_SECRET_KEY=REPLACE_WITH_A_LONG_RANDOM_SECRET
+```
+
+Retain the remaining OTP, SMTP, Twilio, token-expiry, and authentication values
+from `deploy/api.env.example`. Never commit `deploy/api.env`.
+
+## Shared Docker network
+
+The API and PostgreSQL containers communicate through the external network
+`binops_backend`. Create it once:
+
+```bash
+docker network inspect binops_backend >/dev/null 2>&1 \
+  || docker network create binops_backend
+```
+
+Both the API and database Compose files must declare this external network.
+PostgreSQL must have the network alias `database`.
+
+Verify:
+
+```bash
+docker network inspect binops_backend \
+  --format '{{range .Containers}}{{.Name}} → {{.IPv4Address}}{{println}}{{end}}'
+```
+
+## Docker Hub login on the server
+
+For a private repository, use a read-only Docker Hub token:
 
 ```bash
 docker login --username jbscosoft
 ```
 
-## Deploy the latest main image
+## Manual production deployment
 
-```bash
-API_IMAGE_TAG=latest docker compose -f compose.server.yaml pull
-API_IMAGE_TAG=latest docker compose -f compose.server.yaml up -d --remove-orphans
-docker compose -f compose.server.yaml ps
-```
+First confirm the desired image exists in Docker Hub. Prefer the immutable SHA
+tag shown in the successful GitHub Actions run.
 
-The API is bound to `127.0.0.1:8001` by default for use behind Nginx, Caddy, or
-Traefik. Set `API_BIND_ADDRESS=0.0.0.0` only when the port must be exposed
-directly and is protected by a firewall.
-
-## Deploy an immutable commit image
-
-Use the short commit SHA shown in the GitHub Actions build:
-
-```bash
-API_IMAGE_TAG=sha-a82db73 docker compose -f compose.server.yaml pull
-API_IMAGE_TAG=sha-a82db73 docker compose -f compose.server.yaml up -d
-```
-
-Persist the selected tag in a server-only `.env` file to keep it across commands:
+Create `/opt/binops-sys-api/.deploy.env`:
 
 ```env
-API_IMAGE_TAG=sha-a82db73
+API_IMAGE_TAG=api-sha-REPLACE_WITH_FULL_COMMIT
 ```
 
-## Roll back
-
-Set `API_IMAGE_TAG` to the previous known-good SHA tag, then pull and recreate:
+Deploy:
 
 ```bash
-docker compose -f compose.server.yaml pull
-docker compose -f compose.server.yaml up -d
+cd /opt/binops-sys-api
+
+docker compose \
+  --env-file .deploy.env \
+  -f compose.server.yaml \
+  pull api
+
+docker compose \
+  --env-file .deploy.env \
+  -f compose.server.yaml \
+  up -d --remove-orphans api
 ```
 
-## Database changes
+The API listens on port `8001` inside its container and is published only on:
 
-Apply reviewed SQL files from `migrations/manual/` before switching the API to a
-version that requires them. Keep a database backup and do not run unreviewed
-schema changes automatically from the application container.
+```text
+127.0.0.1:9001
+```
+
+Caddy can therefore proxy `/api/*` to `127.0.0.1:9001`, while port `9001`
+remains unavailable externally.
+
+## Deploy `api-latest`
+
+For a simple manual deployment of the latest API image from `main`:
+
+```bash
+cd /opt/binops-sys-api
+API_IMAGE_TAG=api-latest docker compose -f compose.server.yaml pull api
+API_IMAGE_TAG=api-latest docker compose -f compose.server.yaml up -d --remove-orphans api
+```
+
+Immutable SHA tags are recommended because they provide an exact rollback target.
 
 ## Verification
 
+Check the container and API:
+
 ```bash
-curl --fail http://127.0.0.1:8001/health
+docker compose -f compose.server.yaml ps
 docker inspect --format '{{.State.Health.Status}}' binops-sys-api
+curl --fail http://127.0.0.1:9001/health
 docker compose -f compose.server.yaml logs --tail=100 api
+```
+
+Check Docker DNS and PostgreSQL connectivity:
+
+```bash
+docker exec binops-sys-api \
+  python -c "import socket; print(socket.gethostbyname('database'))"
+
+docker exec binops-sys-api \
+  python -c "import socket; connection=socket.create_connection(('database',5432),5); print('Database TCP connection successful'); connection.close()"
+```
+
+## Database migrations
+
+Back up PostgreSQL before applying schema changes. Apply only reviewed migration
+files required by the version being deployed. Do not automatically run
+unreviewed migrations from the API container.
+
+## Manual rollback
+
+Put the previous known-good tag in `.deploy.env`:
+
+```env
+API_IMAGE_TAG=api-sha-PREVIOUS_FULL_COMMIT
+```
+
+Then pull and recreate:
+
+```bash
+cd /opt/binops-sys-api
+docker compose --env-file .deploy.env -f compose.server.yaml pull api
+docker compose --env-file .deploy.env -f compose.server.yaml up -d api
+curl --fail http://127.0.0.1:9001/health
 ```

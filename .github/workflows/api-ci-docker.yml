@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: jbscosoft/binops-sys-api
+  IMAGE_NAME: jbscosoft/binops-sys
 
 jobs:
   test:
@@ -72,11 +72,11 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,prefix=sha-
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=api-sha-${{ github.sha }}
+            type=ref,event=branch,prefix=api-
+            type=semver,pattern={{version}},prefix=api-
+            type=semver,pattern={{major}}.{{minor}},prefix=api-
+            type=raw,value=api-latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push image
         uses: docker/build-push-action@v7

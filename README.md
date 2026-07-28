@@ -42,9 +42,11 @@ API routes are mounted under `/api/v1`.
 ## CI/CD and production deployment
 
 Pushes to `main` and `testenv` run API tests, build a production Docker image,
-and publish it to `jbscosoft/binops-sys-api` on Docker Hub. See
-[`DEPLOYMENT.md`](DEPLOYMENT.md) for GitHub secret setup, server deployment,
-immutable tags, health checks, database changes, and rollback instructions.
+and publish API-prefixed tags to the shared `jbscosoft/binops-sys` Docker Hub
+repository. Production deployment
+is performed manually after selecting a published image tag. See
+[`DEPLOYMENT.md`](DEPLOYMENT.md) for Docker Hub setup, production Compose,
+manual deployment, health checks, database changes, and rollback instructions.
 
 
 sh -c 'pids=$(lsof -tiTCP:8001 -sTCP:LISTEN); [ -z "$pids" ] || kill -9 $pids; exec uv run main.py'
