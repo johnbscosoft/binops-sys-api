@@ -69,14 +69,32 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+import logging
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import OperationalError
+
+logger = logging.getLogger(__name__)
+
+
 @app.exception_handler(OperationalError)
 async def database_connection_exception_handler(
     request: Request,
     exc: OperationalError,
 ) -> JSONResponse:
+    logger.error(
+        "Database operational error: method=%s path=%s",
+        request.method,
+        request.url.path,
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
+
     return JSONResponse(
         status_code=503,
-        content=error_response(message="Database connection failed"),
+        content=error_response(
+            message="Database connection failed",
+        ),
     )
 
 # Mount all feature routes under one API version prefix.
