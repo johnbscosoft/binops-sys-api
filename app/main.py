@@ -107,5 +107,5 @@ app.include_router(api_router, prefix=settings.api_v1_prefix)
 
 @app.get("/health", tags=["health"])
 def health_check() -> dict[str, object]:
-    # Basic app-level health check for deployment/load balancer checks.
+    # Basic app-level health check for deployment/load balancer  checks. 
     return success_response(data={"status": "ok"})

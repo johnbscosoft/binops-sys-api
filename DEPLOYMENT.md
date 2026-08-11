@@ -23,12 +23,10 @@ shared `jbscosoft/binops-sys` repository.
 The workflow publishes:
 
 - `api-latest` for pushes to `main`.
-- `api-main` and `api-testenv` for their respective branches.
-- `api-sha-<full-commit>` as an immutable deployment and rollback tag.
-- API-prefixed semantic-version tags such as `api-1.2.0`.
+- `api-YYYYMMDD-HHMMSS`, generated from the UTC build datetime, as the immutable deployment and rollback tag.
 
 The shared repository can also contain tags such as `ui-latest`,
-`ui-sha-<commit>`, and `db-18.4` without requiring separate Docker Hub
+`ui-YYYYMMDD-HHMMSS`, and `db-18.4` without requiring separate Docker Hub
 repositories.
 
 Pull requests run tests without publishing an image. Pushes to `main` or
@@ -95,13 +93,13 @@ docker login --username jbscosoft
 
 ## Manual production deployment
 
-First confirm the desired image exists in Docker Hub. Prefer the immutable SHA
+First confirm the desired image exists in Docker Hub. Prefer the immutable datetime
 tag shown in the successful GitHub Actions run.
 
 Create `/opt/binops-sys-api/.deploy.env`:
 
 ```env
-API_IMAGE_TAG=api-sha-REPLACE_WITH_FULL_COMMIT
+API_IMAGE_TAG=api-20260811-143025
 ```
 
 Deploy:
@@ -139,7 +137,7 @@ API_IMAGE_TAG=api-latest docker compose -f compose.server.yaml pull api
 API_IMAGE_TAG=api-latest docker compose -f compose.server.yaml up -d --remove-orphans api
 ```
 
-Immutable SHA tags are recommended because they provide an exact rollback target.
+Immutable datetime tags are recommended because they provide an exact rollback target.
 
 ## Verification
 
@@ -173,7 +171,7 @@ unreviewed migrations from the API container.
 Put the previous known-good tag in `.deploy.env`:
 
 ```env
-API_IMAGE_TAG=api-sha-PREVIOUS_FULL_COMMIT
+API_IMAGE_TAG=api-20260810-091500
 ```
 
 Then pull and recreate:
