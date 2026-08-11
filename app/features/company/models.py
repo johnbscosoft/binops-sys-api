@@ -28,6 +28,11 @@ class Company(Base):
     users = relationship("User", back_populates="company")
     roles = relationship("Role", back_populates="company")
     customers = relationship("Customer", back_populates="company")
+    client_categories = relationship(
+        "ClientCategory",
+        back_populates="company",
+        cascade="all, delete-orphan",
+    )
     subscription_plans = relationship(
         "SubscriptionPlan",
         back_populates="company",
@@ -38,4 +43,9 @@ class Company(Base):
         back_populates="company",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    properties = relationship(
+        "Property",
+        back_populates="company",
+        cascade="all, delete-orphan",
     )

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.api.responses import success_response
 from app.database import get_db
+from app.features.client_category.service import seed_default_client_categories
 from app.features.company.models import Company
 from app.features.company.schema import CompanyCreate, CompanyRead, CompanyUpdate
 
@@ -55,6 +56,8 @@ def create_company(company_data: CompanyCreate, db: DbSession) -> dict[str, obje
         **company_data.model_dump(),
     )
     db.add(company)
+    db.flush()
+    seed_default_client_categories(db, company.id)
     db.commit()
     db.refresh(company)
     return success_response(company)

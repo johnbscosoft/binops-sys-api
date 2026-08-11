@@ -28,3 +28,4 @@ class SubscriptionPlan(Base):
 
     company = relationship("Company", back_populates="subscription_plans")
     customers = relationship("Customer", back_populates="subscription_plan")
+    properties = relationship("Property", back_populates="subscription_plan")

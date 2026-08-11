@@ -11,9 +11,11 @@ from app.api.responses import error_response, success_response
 from app.core.config import get_settings
 from app.database import Base, engine
 from app.features.authentication_settings import models as authentication_settings_model
+from app.features.client_category import models as client_category_model
 from app.features.company import models as company_model
 from app.features.contract import models as contract_model
 from app.features.customer import models as customer_model
+from app.features.property import models as property_model
 from app.features.subscription_plan import models as subscription_plan_model
 from app.features.users import model as user_model
 
@@ -22,9 +24,11 @@ settings = get_settings()
 # Import feature models so SQLAlchemy registers their tables in Base.metadata.
 _registered_models = (
     authentication_settings_model,
+    client_category_model,
     company_model,
     contract_model,
     customer_model,
+    property_model,
     subscription_plan_model,
     user_model,
 )
