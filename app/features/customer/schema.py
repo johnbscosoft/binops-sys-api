@@ -24,14 +24,13 @@ class CustomerRoomInput(BaseModel):
 
 class CreateCustomer(BaseModel):
     name: str = Field(min_length=2, max_length=160)
-    phone_no: str = Field(min_length=10, max_length=40)
-    email: str = Field(min_length=3, max_length=255)
-    location: str = Field(min_length=2, max_length=500)
+    phone_no: str | None = Field(default=None, max_length=40)
+    email: str | None = Field(default=None, max_length=255)
+    # Apartment and rental customers inherit this value from their property.
+    location: str | None = Field(default=None, max_length=500)
     latitude: float | None = None
     longitude: float | None = None
     place_id: str | None = None
-    flat_no: str | None = None
-    house_no: str | None = None
     number_of_bags: int = Field(default=0, ge=0, strict=True)
     notes: str | None = Field(default=None, max_length=1000)
     agreed_price: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)

@@ -176,8 +176,6 @@ def serialize_customer(customer: Customer) -> dict:
         "latitude": customer.latitude,
         "longitude": customer.longitude,
         "place_id": customer.place_id,
-        "flat_no": customer.flat_no,
-        "house_no": customer.house_no,
         "number_of_bags": customer.number_of_bags,
         "notes": customer.notes,
         "customer_type": "STANDARD",
@@ -215,20 +213,20 @@ def apply_customer_values(
     property_record: Property | None,
 ) -> None:
     customer.name = payload.name.strip()
-    customer.phone_no = payload.phone_no.strip()
-    customer.email = payload.email.strip()
+    customer.phone_no = (payload.phone_no.strip() or None) if payload.phone_no else None
+    customer.email = (payload.email.strip().lower() or None) if payload.email else None
     if property_record:
         customer.location = property_record.location.strip()
         customer.latitude = None
         customer.longitude = None
         customer.place_id = None
     else:
+        if not payload.location or len(payload.location.strip()) < 2:
+            raise HTTPException(status_code=422, detail="Location is required for non-property customers")
         customer.location = payload.location.strip()
         customer.latitude = payload.latitude
         customer.longitude = payload.longitude
         customer.place_id = payload.place_id
-    customer.flat_no = payload.flat_no
-    customer.house_no = payload.house_no
     customer.number_of_bags = payload.number_of_bags
     customer.notes = payload.notes.strip() if payload.notes else None
     customer.customer_type = "STANDARD"
