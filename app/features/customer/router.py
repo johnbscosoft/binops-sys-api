@@ -8,6 +8,7 @@ from app.api.responses import success_response
 from app.database import get_db
 from app.features.client_category.models import ClientCategory
 from app.features.customer.models import Customer
+from app.features.authentication_settings.models import AuthenticationSettings
 from app.features.customer.schema import CreateCustomer
 from app.features.property.models import Property, PropertyOccupancy, PropertyUnit
 from app.features.subscription_plan.models import SubscriptionPlan
@@ -206,6 +207,7 @@ def serialize_customer(customer: Customer) -> dict:
 
 
 def apply_customer_values(
+    db: Session,
     customer: Customer,
     payload: CreateCustomer,
     category: ClientCategory,
@@ -227,6 +229,17 @@ def apply_customer_values(
         customer.latitude = payload.latitude
         customer.longitude = payload.longitude
         customer.place_id = payload.place_id
+        location_settings = (
+            db.query(AuthenticationSettings)
+            .filter(AuthenticationSettings.company_id == customer.company_id)
+            .first()
+        )
+        if location_settings and location_settings.location_provider == "GOOGLE":
+            if payload.latitude is None or payload.longitude is None or not payload.place_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Select a Google Maps location so its coordinates can be saved",
+                )
     customer.number_of_bags = payload.number_of_bags
     customer.notes = payload.notes.strip() if payload.notes else None
     customer.customer_type = "STANDARD"
@@ -253,7 +266,7 @@ def create_customer(
         db, payload, category, current_user.company_id
     )
     customer = Customer(company_id=current_user.company_id)
-    apply_customer_values(customer, payload, category, plan, property_record)
+    apply_customer_values(db, customer, payload, category, plan, property_record)
     db.add(customer)
     db.flush()
     sync_property_occupancy(db, customer, property_record, unit, payload.occupancy_start_date)
@@ -315,7 +328,7 @@ def update_customer(
     plan, property_record, unit = validate_customer_payload(
         db, payload, category, current_user.company_id, customer.id
     )
-    apply_customer_values(customer, payload, category, plan, property_record)
+    apply_customer_values(db, customer, payload, category, plan, property_record)
     sync_property_occupancy(db, customer, property_record, unit, payload.occupancy_start_date)
     db.commit()
     db.refresh(customer)

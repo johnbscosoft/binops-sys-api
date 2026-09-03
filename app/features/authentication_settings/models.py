@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -21,6 +21,8 @@ class AuthenticationSettings(Base):
     otp_enabled = Column(Boolean, default=True, nullable=False)
     email_otp_enabled = Column(Boolean, default=True, nullable=False)
     sms_otp_enabled = Column(Boolean, default=True, nullable=False)
+    google_location_enabled = Column(Boolean, default=False, nullable=False)
+    location_provider = Column(String(20), default="MANUAL", server_default="MANUAL", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

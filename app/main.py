@@ -14,10 +14,13 @@ from app.features.authentication_settings import models as authentication_settin
 from app.features.client_category import models as client_category_model
 from app.features.company import models as company_model
 from app.features.contract import models as contract_model
+from app.features.collection import models as collection_model
 from app.features.customer import models as customer_model
 from app.features.property import models as property_model
 from app.features.subscription_plan import models as subscription_plan_model
+from app.features.staff import models as staff_model
 from app.features.users import model as user_model
+from app.features.vehicle import models as vehicle_model
 
 settings = get_settings()
 
@@ -27,10 +30,13 @@ _registered_models = (
     client_category_model,
     company_model,
     contract_model,
+    collection_model,
     customer_model,
     property_model,
     subscription_plan_model,
+    staff_model,
     user_model,
+    vehicle_model,
 )
 
 
