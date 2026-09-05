@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 from typing import Annotated
 from uuid import UUID
 from fastapi import APIRouter,Depends,HTTPException
@@ -37,7 +38,7 @@ def list_todays_pickups(job_id:UUID,user:Current,db:Db):
 
 @router.get('/pickups/today')
 def list_all_todays_pickups(user:Current,db:Db,job_date:date|None=None,route_id:UUID|None=None):
- target=job_date or date.today()
+ target=job_date or datetime.now(ZoneInfo("Africa/Kampala")).date()
  query=db.query(TodaysPickup,Customer,DailyJob,CollectionArea,CollectionRoute).join(DailyJob,DailyJob.id==TodaysPickup.daily_job_id).join(Customer,Customer.id==TodaysPickup.customer_id).join(CollectionArea,CollectionArea.id==DailyJob.area_id).join(CollectionRoute,CollectionRoute.id==DailyJob.route_id).filter(DailyJob.company_id==user.company_id,DailyJob.job_date==target)
  if route_id: query=query.filter(DailyJob.route_id==route_id)
  rows=query.order_by(DailyJob.job_code,TodaysPickup.stop_order).all()
