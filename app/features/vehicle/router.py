@@ -26,7 +26,7 @@ def vehicle_or_404(db: Session, vehicle_id: UUID, company_id: UUID) -> Vehicle:
 
 
 def validate_driver(db: Session, driver_id: UUID | None, company_id: UUID) -> None:
-    if driver_id and not db.query(Staff.id).filter(Staff.id == driver_id, Staff.company_id == company_id, Staff.designation == "DRIVER", Staff.status == "Active").first():
+    if driver_id and not db.query(Staff.id).filter(Staff.id == driver_id, Staff.company_id == company_id, func.lower(Staff.designation) == "driver", Staff.status == "Active").first():
         raise HTTPException(status_code=422, detail="Select an active staff member designated as a driver")
 
 

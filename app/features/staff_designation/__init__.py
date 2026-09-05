@@ -1,0 +1,1 @@
+"""Staff designation settings."""

@@ -40,6 +40,7 @@ class Customer(Base):
 
     id = Column(Integer, primary_key=True)
     company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), index=True, nullable=False)
+    collection_route_id = Column(UUID(as_uuid=True), ForeignKey("collection_routes.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String)
     phone_no = Column(String, nullable=True)
     email = Column(String, nullable=True)

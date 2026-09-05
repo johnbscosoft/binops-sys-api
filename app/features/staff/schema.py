@@ -8,7 +8,7 @@ class StaffPayload(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     employment_date: date | None = None
-    designation: Literal["DRIVER", "COLLECTOR", "ADMIN"]
+    designation: str = Field(min_length=2, max_length=100)
     phone_number: str | None = Field(default=None, max_length=40)
     residence: str | None = Field(default=None, max_length=500)
     permit_number: str | None = Field(default=None, max_length=100)

@@ -19,6 +19,9 @@ from app.features.customer import models as customer_model
 from app.features.property import models as property_model
 from app.features.subscription_plan import models as subscription_plan_model
 from app.features.staff import models as staff_model
+from app.features.staff_designation import models as staff_designation_model
+from app.features.schedule import models as schedule_model
+from app.features.daily_job import models as daily_job_model
 from app.features.users import model as user_model
 from app.features.vehicle import models as vehicle_model
 
@@ -35,6 +38,9 @@ _registered_models = (
     property_model,
     subscription_plan_model,
     staff_model,
+    staff_designation_model,
+    schedule_model,
+    daily_job_model,
     user_model,
     vehicle_model,
 )

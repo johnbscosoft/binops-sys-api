@@ -12,6 +12,7 @@ from app.features.authentication_settings.models import AuthenticationSettings
 from app.features.customer.schema import CreateCustomer
 from app.features.property.models import Property, PropertyOccupancy, PropertyUnit
 from app.features.subscription_plan.models import SubscriptionPlan
+from app.features.collection.models import CollectionRoute
 from app.features.users.model import User
 from app.features.users.router import get_current_user
 
@@ -170,6 +171,7 @@ def serialize_customer(customer: Customer) -> dict:
     return {
         "id": customer.id,
         "company_id": customer.company_id,
+        "collection_route_id": customer.collection_route_id,
         "name": customer.name,
         "phone_no": customer.phone_no,
         "email": customer.email,
@@ -333,6 +335,16 @@ def update_customer(
     db.commit()
     db.refresh(customer)
     return success_response(serialize_customer(customer), message="Customer updated successfully")
+
+@router.put("/customers/{customer_id}/route")
+def assign_customer_route(customer_id: int, payload: dict, current_user: Annotated[User, Depends(get_current_user)], db: DbSession):
+    customer = db.query(Customer).filter(Customer.id == customer_id, Customer.company_id == current_user.company_id).first()
+    route_id = payload.get("route_id")
+    if not customer: raise HTTPException(status_code=404, detail="Customer not found")
+    route = db.query(CollectionRoute).filter(CollectionRoute.id == route_id, CollectionRoute.company_id == current_user.company_id).first()
+    if not route: raise HTTPException(status_code=422, detail="Select a valid collection route")
+    customer.collection_route_id = route.id; db.commit(); db.refresh(customer)
+    return success_response(serialize_customer(customer), message="Customer route assigned successfully")
 
 
 @router.delete("/customers/{customer_id}")

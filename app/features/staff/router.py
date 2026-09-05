@@ -40,7 +40,7 @@ def list_staff(current_user: CurrentUser, db: DbSession):
 
 @router.get("/drivers")
 def list_drivers(current_user: CurrentUser, db: DbSession):
-    items = db.query(Staff).filter(Staff.company_id == current_user.company_id, Staff.designation == "DRIVER", Staff.status == "Active").order_by(Staff.first_name, Staff.last_name).all()
+    items = db.query(Staff).filter(Staff.company_id == current_user.company_id, func.lower(Staff.designation) == "driver", Staff.status == "Active").order_by(Staff.first_name, Staff.last_name).all()
     return success_response([serialize(item) for item in items])
 
 
