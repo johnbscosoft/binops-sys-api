@@ -14,7 +14,7 @@ class StaffPayload(BaseModel):
     permit_number: str | None = Field(default=None, max_length=100)
     permit_expiry_date: date | None = None
     date_of_birth: date | None = None
-    gender: Literal["Male", "Female", "Other"] | None = None
+    gender: Literal["Male", "Female"] | None = None
     attachment_name: str | None = Field(default=None, max_length=255)
     attachment_data: str | None = None
     status: Literal["Active", "Inactive"] = "Active"
