@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.responses import success_response
@@ -46,20 +47,20 @@ def list_drivers(current_user: CurrentUser, db: DbSession):
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_staff(payload: StaffPayload, current_user: Superuser, db: DbSession):
-    duplicate = db.query(Staff).filter(Staff.company_id == current_user.company_id, func.lower(Staff.first_name) == payload.first_name.lower(), func.lower(Staff.last_name) == payload.last_name.lower()).first()
-    if duplicate:
-        raise HTTPException(status_code=409, detail="A staff member with this name already exists")
-    item = Staff(company_id=current_user.company_id, **payload.model_dump())
-    db.add(item); db.commit(); db.refresh(item)
-    return success_response(serialize(item), message="Staff member created successfully")
+    try:
+        item = Staff(company_id=current_user.company_id, **payload.model_dump())
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        return success_response(serialize(item), message="Staff member created successfully")
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Staff member could not be saved. Please try again.")
 
 
 @router.put("/{staff_id}")
 def update_staff(staff_id: UUID, payload: StaffPayload, current_user: Superuser, db: DbSession):
     item = staff_or_404(db, staff_id, current_user.company_id)
-    duplicate = db.query(Staff).filter(Staff.company_id == current_user.company_id, func.lower(Staff.first_name) == payload.first_name.lower(), func.lower(Staff.last_name) == payload.last_name.lower(), Staff.id != item.id).first()
-    if duplicate:
-        raise HTTPException(status_code=409, detail="A staff member with this name already exists")
     for field, value in payload.model_dump().items(): setattr(item, field, value)
     db.commit(); db.refresh(item)
     return success_response(serialize(item), message="Staff member updated successfully")
