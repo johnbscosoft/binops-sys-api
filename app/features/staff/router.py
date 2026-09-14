@@ -55,7 +55,7 @@ def list_drivers(current_user: CurrentUser, db: DbSession):
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_staff(payload: StaffPayload, current_user: Superuser, db: DbSession):
+def create_staff(payload: StaffPayload, current_user: CurrentUser, db: DbSession):
     try:
         if duplicate_phone(db, payload.phone_number, current_user.company_id):
             raise HTTPException(status_code=409, detail="A staff member with this phone number already exists")
