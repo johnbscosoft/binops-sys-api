@@ -32,7 +32,7 @@ def validate_driver(db: Session, driver_id: UUID | None, company_id: UUID) -> No
 
 def serialize(item: Vehicle) -> dict:
     driver_name = None if not item.driver else f"{item.driver.first_name} {item.driver.last_name}"
-    return {"id": item.id, "company_id": item.company_id, "plate_number": item.plate_number, "model": item.model, "driver_id": item.driver_id, "driver_name": driver_name, "status": item.status, "created_at": item.created_at, "updated_at": item.updated_at}
+    return {"id": item.id, "company_id": item.company_id, "plate_number": item.plate_number, "model": item.model, "chassis_number": item.chassis_number, "vehicle_type": item.vehicle_type, "purchase_date": item.purchase_date, "third_party_insurance_expiry": item.third_party_insurance_expiry, "truck_photo_name": item.truck_photo_name, "truck_photo_data": item.truck_photo_data, "logbook_name": item.logbook_name, "logbook_data": item.logbook_data, "driver_id": item.driver_id, "driver_name": driver_name, "status": item.status, "created_at": item.created_at, "updated_at": item.updated_at}
 
 
 @router.get("")
@@ -46,7 +46,7 @@ def create_vehicle(payload: VehiclePayload, current_user: Superuser, db: DbSessi
     validate_driver(db, payload.driver_id, current_user.company_id)
     if db.query(Vehicle.id).filter(Vehicle.company_id == current_user.company_id, func.lower(Vehicle.plate_number) == payload.plate_number.lower()).first():
         raise HTTPException(status_code=409, detail="A vehicle with this plate number already exists")
-    item = Vehicle(company_id=current_user.company_id, plate_number=payload.plate_number.upper().strip(), model=payload.model.strip(), driver_id=payload.driver_id, status=payload.status)
+    item = Vehicle(company_id=current_user.company_id, **{**payload.model_dump(), "plate_number": payload.plate_number.upper().strip(), "model": payload.model.strip()})
     db.add(item); db.commit(); db.refresh(item)
     return success_response(serialize(item), message="Vehicle created successfully")
 
@@ -57,7 +57,8 @@ def update_vehicle(vehicle_id: UUID, payload: VehiclePayload, current_user: Supe
     validate_driver(db, payload.driver_id, current_user.company_id)
     if db.query(Vehicle.id).filter(Vehicle.company_id == current_user.company_id, func.lower(Vehicle.plate_number) == payload.plate_number.lower(), Vehicle.id != item.id).first():
         raise HTTPException(status_code=409, detail="A vehicle with this plate number already exists")
-    item.plate_number, item.model, item.driver_id, item.status = payload.plate_number.upper().strip(), payload.model.strip(), payload.driver_id, payload.status
+    for field, value in payload.model_dump().items(): setattr(item, field, value)
+    item.plate_number, item.model = payload.plate_number.upper().strip(), payload.model.strip()
     db.commit(); db.refresh(item)
     return success_response(serialize(item), message="Vehicle updated successfully")
 

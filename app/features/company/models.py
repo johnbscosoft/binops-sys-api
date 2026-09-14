@@ -15,6 +15,7 @@ class Company(Base):
     name = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     phone_number = Column(String, index=True, nullable=False)
+    address = Column(String(500), nullable=True)
     logo = Column(String, nullable=True)
     contact_person = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

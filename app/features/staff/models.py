@@ -15,7 +15,7 @@ class Staff(Base):
     last_name = Column(String(100), nullable=False)
     employment_date = Column(Date, nullable=True)
     designation = Column(String(20), nullable=False)
-    phone_number = Column(String(40), nullable=True)
+    phone_number = Column(String(10), nullable=False)
     residence = Column(String(500), nullable=True)
     permit_number = Column(String(100), nullable=True)
     permit_expiry_date = Column(Date, nullable=True)

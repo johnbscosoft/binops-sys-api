@@ -9,6 +9,7 @@ from app.api.responses import success_response
 from app.database import get_db
 from app.features.customer.models import Customer
 from app.features.collection.models import CollectionArea,CollectionRoute
+from app.features.collection_billing.service import COMPLETED_PICKUP_STATUSES,MISSED_PICKUP_STATUSES,create_collection_billing_record,waive_unbilled_collection_record
 from app.features.daily_job.models import DailyJob,TodaysPickup
 from app.features.schedule.models import CollectionSchedule
 from app.features.users.model import User
@@ -48,5 +49,7 @@ def list_all_todays_pickups(user:Current,db:Db,job_date:date|None=None,route_id:
 def update_pickup(pickup_id:UUID,payload:PickupUpdate,user:Current,db:Db):
  pickup=db.query(TodaysPickup).join(DailyJob,DailyJob.id==TodaysPickup.daily_job_id).filter(TodaysPickup.id==pickup_id,DailyJob.company_id==user.company_id).first()
  if not pickup: raise HTTPException(404,'Today’s pickup not found')
- pickup.bags_issued=max(0,payload.bags_issued);pickup.status=payload.status;pickup.notes=payload.notes;pickup.before_photo=payload.before_photo;pickup.after_photo=payload.after_photo;pickup.collector_latitude=payload.collector_latitude;pickup.collector_longitude=payload.collector_longitude;pickup.completed_at=datetime.now(timezone.utc) if payload.status in ('Collected','Partially Collected') else None
+ pickup.bags_issued=max(0,payload.bags_issued);pickup.status=payload.status;pickup.notes=payload.notes;pickup.before_photo=payload.before_photo;pickup.after_photo=payload.after_photo;pickup.collector_latitude=payload.collector_latitude;pickup.collector_longitude=payload.collector_longitude;pickup.completed_at=datetime.now(timezone.utc) if payload.status in COMPLETED_PICKUP_STATUSES else None
+ if payload.status in COMPLETED_PICKUP_STATUSES: create_collection_billing_record(db,pickup,user)
+ elif payload.status in MISSED_PICKUP_STATUSES: waive_unbilled_collection_record(db,pickup,user)
  db.commit();return success_response(message='Pickup updated successfully')

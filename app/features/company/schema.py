@@ -8,6 +8,7 @@ class CompanyCreate(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     email: EmailStr
     phone_number: str = Field(min_length=3, max_length=12)
+    address: str | None = Field(default=None, max_length=500)
     logo: str | None = None
     contact_person: str = Field(min_length=2, max_length=160)
 
@@ -16,6 +17,7 @@ class CompanyUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)
     email: EmailStr | None = None
     phone_number: str | None = Field(default=None, min_length=3, max_length=40)
+    address: str | None = Field(default=None, max_length=500)
     logo: str | None = None
     contact_person: str | None = Field(default=None, min_length=2, max_length=160)
 
@@ -28,6 +30,7 @@ class CompanyRead(BaseModel):
     name: str
     email: EmailStr
     phone_number: str
+    address: str | None
     logo: str | None
     contact_person: str
     created_at: datetime

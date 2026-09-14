@@ -15,6 +15,7 @@ from app.features.client_category import models as client_category_model
 from app.features.company import models as company_model
 from app.features.contract import models as contract_model
 from app.features.collection import models as collection_model
+from app.features.collection_billing import models as collection_billing_model
 from app.features.customer import models as customer_model
 from app.features.property import models as property_model
 from app.features.subscription_plan import models as subscription_plan_model
@@ -22,6 +23,7 @@ from app.features.staff import models as staff_model
 from app.features.staff_designation import models as staff_designation_model
 from app.features.schedule import models as schedule_model
 from app.features.daily_job import models as daily_job_model
+from app.features.invoice import models as invoice_model
 from app.features.users import model as user_model
 from app.features.vehicle import models as vehicle_model
 
@@ -34,6 +36,7 @@ _registered_models = (
     company_model,
     contract_model,
     collection_model,
+    collection_billing_model,
     customer_model,
     property_model,
     subscription_plan_model,
@@ -41,6 +44,7 @@ _registered_models = (
     staff_designation_model,
     schedule_model,
     daily_job_model,
+    invoice_model,
     user_model,
     vehicle_model,
 )

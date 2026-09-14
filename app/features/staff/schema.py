@@ -9,7 +9,7 @@ class StaffPayload(BaseModel):
     last_name: str = Field(min_length=1, max_length=100)
     employment_date: date | None = None
     designation: str = Field(min_length=2, max_length=100)
-    phone_number: str | None = Field(default=None, max_length=40)
+    phone_number: str = Field(min_length=10, max_length=10, pattern=r"^\d{10}$")
     residence: str | None = Field(default=None, max_length=500)
     permit_number: str | None = Field(default=None, max_length=100)
     permit_expiry_date: date | None = None

@@ -26,6 +26,15 @@ def staff_or_404(db: Session, staff_id: UUID, company_id: UUID) -> Staff:
     return item
 
 
+def duplicate_phone(db: Session, phone_number: str | None, company_id: UUID, exclude_staff_id: UUID | None = None) -> Staff | None:
+    if not phone_number:
+        return None
+    query = db.query(Staff).filter(Staff.company_id == company_id, Staff.phone_number == phone_number)
+    if exclude_staff_id:
+        query = query.filter(Staff.id != exclude_staff_id)
+    return query.first()
+
+
 def serialize(item: Staff) -> dict:
     return {key: getattr(item, key) for key in (
         "id", "company_id", "first_name", "last_name", "employment_date", "designation", "phone_number", "residence", "permit_number",
@@ -48,6 +57,8 @@ def list_drivers(current_user: CurrentUser, db: DbSession):
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_staff(payload: StaffPayload, current_user: Superuser, db: DbSession):
     try:
+        if duplicate_phone(db, payload.phone_number, current_user.company_id):
+            raise HTTPException(status_code=409, detail="A staff member with this phone number already exists")
         item = Staff(company_id=current_user.company_id, **payload.model_dump())
         db.add(item)
         db.commit()
@@ -61,6 +72,8 @@ def create_staff(payload: StaffPayload, current_user: Superuser, db: DbSession):
 @router.put("/{staff_id}")
 def update_staff(staff_id: UUID, payload: StaffPayload, current_user: Superuser, db: DbSession):
     item = staff_or_404(db, staff_id, current_user.company_id)
+    if duplicate_phone(db, payload.phone_number, current_user.company_id, item.id):
+        raise HTTPException(status_code=409, detail="A staff member with this phone number already exists")
     for field, value in payload.model_dump().items(): setattr(item, field, value)
     db.commit(); db.refresh(item)
     return success_response(serialize(item), message="Staff member updated successfully")
